@@ -1,4 +1,6 @@
-(* This programm uses Genlex                       *)
+(* This program allows working with peano numbers, using merge sort for list  *) 
+(* and parsing lambda-expressions. Note that, it uses Genlex.                 *)
+
 (* Write in console to run:                        *)
 (* > ocamlc -o <EXECUTOR-NAME> hw1.mli hw1.ml t.ml *)
 (* > ./<EXECUTOR-NAME>                             *)
@@ -140,8 +142,8 @@ let parse_lambda_of_tokens str_tokens =
         | Some k -> 
                 (match k with 
                  | Kwd ")" -> l_app
-      		 | Kwd ";" -> l_app
-        	 | _ -> App(l_app, parse_lambda())) in
+      		     | Kwd ";" -> l_app
+        	     | _ -> App(l_app, parse_lambda())) in
 
     parse_lambda();; 
  
