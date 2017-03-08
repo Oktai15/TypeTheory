@@ -72,18 +72,19 @@ let parse_lambda_of_tokens str_tokens =
  
 let lambda_of_string x = parse_lambda_of_tokens (lexer_lambda(Stream.of_string (str_with_end_sym x)));;
 
+(* Functions for check on alpha equivalent lambda expressions and free substation lambda expression instead of variable in lambda-expression:  *)
+(* subst_var, is_alpha_equivalent, free_subst, find_free_var, subst_lmd                                                                                       *) 
+
 let generator_numbers n = Stream.from (fun i -> if i < n then Some i else None);;
-
 let gen1000 = generator_numbers 1000;;
-
 let next_var() = match (Stream.next gen1000) with
     | k -> "t" ^ string_of_int k;;
 
-let rec subst nv lmd ov = 
+let rec subst_var nv lmd ov = 
     match (lmd) with 
     | Var(v) -> if v = ov then Var(nv) else Var(v);
-    | App(l1, l2) -> App(subst nv l1 ov, subst nv l2 ov);
-    | Abs(v, l) -> if v = ov then Abs(nv, subst nv l ov) else Abs(v, subst nv l ov);;
+    | App(l1, l2) -> App(subst_var nv l1 ov, subst_var nv l2 ov);
+    | Abs(v, l) -> if v = ov then Abs(nv, subst_var nv l ov) else Abs(v, subst_var nv l ov);;
 
 let rec is_alpha_equivalent lmd1 lmd2 =
     match (lmd1, lmd2) with 
@@ -93,8 +94,31 @@ let rec is_alpha_equivalent lmd1 lmd2 =
             then true else false;
     | (Abs(v1, l1), Abs(v2, l2)) -> 
             let nv = next_var() in
-            is_alpha_equivalent (subst nv l1 v1) (subst nv l2 v2); 
+            is_alpha_equivalent (subst_var nv l1 v1) (subst_var nv l2 v2); 
     | _ -> false;;
+
+module VarSet = Set.Make (String);;
+
+let rec find_free_var lmd st = 
+    match (lmd) with 
+    | Var(v) -> VarSet.add v st;
+    | App(l1, l2) -> VarSet.union (find_free_var l1 st) (find_free_var l2 st);
+    | Abs(v, l) -> VarSet.remove v (find_free_var l st);;
+
+let rec subst_lmd n m x vset = 
+	match (m) with 
+    | Var(v) -> if (v = x) then n else Var(v);
+    | App(l1, l2) -> App(subst_lmd n l1 x vset, subst_lmd n l2 x vset);
+    | Abs(v, l) -> if (v = x) then Abs(v, l) else (if (VarSet.mem v vset) then (failwith "v in FV(n)!") else (Abs(v, subst_lmd n l x vset)));;
+
+let free_subst n m x = 
+	try
+	    let sl = subst_lmd n m x (find_free_var n (VarSet.empty)) in  
+	    match sl with 
+	    | _ -> true
+	with 
+	| _ -> false
+
 
 
 
