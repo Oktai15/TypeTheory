@@ -1,18 +1,15 @@
-(* This program allows checking on alpha eqivalent lambda-expressions *) 
-(*and check on free substitution lambda-expressions. Note that, it uses Genlex and hw1.ml                   *) 
+(* This program allows checking on alpha eqivalent lambda-expressions, *) 
+(* check on free substitution lambda-expressions and doing reduction. Note that, it uses Genlex and hw1.ml                   *) 
 
 open Genlex;;
 open Hw1;;
 
-(* Functions for check on alpha equivalent lambda expressions and free substation lambda expression instead of variable in lambda-expression:  *)
-(* subst_var, is_alpha_equivalent, free_to_subst, find_free_var, subst_lmd                                                                                       *) 
-
+(*
 let generator_numbers n = Stream.from (fun i -> if i < n then Some i else None);;
 let gen1000 = generator_numbers 1000;;
 let next_var() = match (Stream.next gen1000) with
     | k -> "t" ^ string_of_int k;;
 
-(*
 let rec subst_var nv lmd ov = 
     match (lmd) with 
     | Var(v) -> if v = ov then Var(nv) else Var(v);
@@ -44,7 +41,8 @@ let rec subst_lmd n m x vset =
     | App(l1, l2) -> App(subst_lmd n l1 x vset, subst_lmd n l2 x vset);
     | Abs(v, l) -> if (v = x) then Abs(v, l) else (if (VarSet.mem v vset) then (failwith "v in FV(n)!") else (Abs(v, subst_lmd n l x vset)));;
 
-(* General realiations *)
+(* Major realiations: free_to_subst, free_vars, is_normal_form,  *)
+(* normal_beta_reduction, reduce_to_normal_form                  *)
 
 let free_to_subst n m x = 
 	try
@@ -58,7 +56,31 @@ let free_vars lmd =
     let vset = find_free_var lmd VarSet.empty in 
 	VarSet.elements vset;;
 
+let rec is_normal_form lmd =
+    match lmd with 
+    | Var x -> true
+    | Abs(a, b) -> is_normal_form b
+    | App(a, b) -> 
+        match a with 
+        | Abs(_, _) -> false
+        | _ -> is_normal_form a && is_normal_form b;;
 
-let is_normal_form lmd = failwith "Not implemented";;
-let normal_beta_reduction lmd = failwith "Not implemented";;
-let reduce_to_normal_form lmd = failwith "Not implemented";;
+let rec normal_beta_reduction lmd = 
+    if (is_normal_form lmd) then lmd else 
+        match lmd with
+        | Var x -> lmd
+        | Abs(_, b) -> normal_beta_reduction b
+        | App(a, b) -> 
+            match a with 
+            | Abs(x, y) -> subst_lmd b y x (find_free_var b (VarSet.empty));
+            | _ ->  if is_normal_form a then
+                        App(a, (normal_beta_reduction b))
+                    else
+                        App((normal_beta_reduction a), b);; 
+
+
+let rec reduce_to_normal_form lmd =
+    let k = is_normal_form lmd in 
+        match k with
+        | false -> let z = normal_beta_reduction lmd in reduce_to_normal_form z;
+        | true  -> lmd;; 

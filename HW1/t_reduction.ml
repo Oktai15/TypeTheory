@@ -8,6 +8,7 @@ open Hw1;;
 type test_for_alpha_eq = {lmd1 : lambda; lmd2 : lambda; ans : bool};;
 type test_for_free_subst = {n : lambda; m : lambda; x : string; ans : bool};;
 type test_free_vars = {lmd : lambda; list_ans : string list};;
+type test_reduction = {lmd_r : lambda; rdt : lambda};;
 
 let tests_fae = 
     [{lmd1 = lambda_of_string "(x)"; lmd2 = lambda_of_string "(y)"; ans = false};
@@ -32,14 +33,37 @@ let tests_ofs =
     {n = lambda_of_string "x y \\z.z"; m = lambda_of_string "\\x.b"; x = "a"; ans = false}];; (*!!!*)
 
 let tests_fv = 
-    [
-    {lmd = lambda_of_string "x"; list_ans = ["x"]};
+    [{lmd = lambda_of_string "x"; list_ans = ["x"]};
     {lmd = lambda_of_string "\\x.x"; list_ans = []}; 
     {lmd = lambda_of_string "(x) (\\x.y)"; list_ans = ["x";"y"]}];;
+
+let tests_nbr = 
+    [{lmd_r = lambda_of_string "(\\x.x) a"; rdt = lambda_of_string "a"};
+    {lmd_r = lambda_of_string "a ((\\y.\\z.y) (\\p.p))"; rdt = lambda_of_string "a \\z.\\p.p"};
+    {lmd_r = lambda_of_string "(\\x.x) (\\y.y) (\\z.z))"; rdt = lambda_of_string "((\\y.y) (\\z.z))"}];;
+
+let tests_rnf = 
+    [{lmd_r = lambda_of_string "(\\x.\\y.y)((\\z.z z)(\\z.z z))"; rdt = lambda_of_string "\\y.y"};
+    {lmd_r = lambda_of_string "a ((\\y.\\z.y) (\\p.p))"; rdt = lambda_of_string "a \\z.\\p.p"};
+    {lmd_r = lambda_of_string "(\\x.x) (\\y.y) (\\z.z))"; rdt = lambda_of_string "(\\z.z)"};
+    {lmd_r = lambda_of_string "(\\x.x x)(\\a.\\b.b b b) "; rdt = lambda_of_string "\\b.b b b"}];;
 
 (*let tester_on_alpha_eq t = if (is_alpha_equivalent (t.lmd1) (t.lmd2) = t.ans) then true else false;;*)
 let tester_on_free_subst t = if (free_to_subst (t.n) (t.m) (t.x) = t.ans) then true else false;;
 let tester_on_free_vars t = if (free_vars t.lmd = t.list_ans) then true else false;;
+let tester_on_normal_beta_reduction t = 
+    let k = normal_beta_reduction t.lmd_r in
+    match (k = t.rdt) with
+    | true  -> true;
+    | false -> print_string(string_of_lambda k ^ "\n"); false;;
+
+let tester_on_reduce_to_normal_form t = 
+    let k = reduce_to_normal_form t.lmd_r in
+    match (k = t.rdt) with
+    | true  -> true;
+    | false -> print_string(string_of_lambda k ^ "\n"); false;;
+
+
 let rec tester pred name l ind cor incor = 
 	match l with 
 	| [] ->  print_string ("Testing on <" ^ name ^ "> has done!\nYour stats: " ^ "correct answers: " ^ (string_of_int cor) ^
@@ -55,3 +79,5 @@ let rec tester pred name l ind cor incor =
 (*tester (tester_on_alpha_eq) "is_alpha_equivalent" tests_fae 1 0 0;;*)
 tester (tester_on_free_subst) "free_subst" tests_ofs 1 0 0;;
 tester (tester_on_free_vars) "free_vars" tests_fv 1 0 0;;
+tester (tester_on_normal_beta_reduction) "normal_beta_reduction" tests_nbr 1 0 0;;
+tester (tester_on_reduce_to_normal_form) "reduce_to_normal_form" tests_rnf 1 0 0;;
