@@ -1,5 +1,14 @@
 open Hw1;;
 
+(* Write in console to run:                        *)
+(* > ocamlc -o <EXECUTOR-NAME> hw1.mli hw1.ml t.ml *)
+(* > ./<EXECUTOR-NAME>                             *)
+
+let rec print_int_list x = 
+    match x with 
+    | [] -> print_string " "
+    | a::xs -> print_int a; print_string " "; print_int_list xs;;
+
 print_int (int_of_peano (S (S (Z))));;
 print_string "\n";;
 print_int (int_of_peano (peano_of_int 5));;
