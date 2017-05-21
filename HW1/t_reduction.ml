@@ -2,7 +2,7 @@ open Hw1_reduction;;
 open Hw1;;
 
 (* Write in console to run:                        *)
-(* > ocamlc -o <EXECUTOR-NAME> hw1.mli hw1.ml hw1_reduction.mli hw1_reduction.ml t.ml *)
+(* > ocamlc -o <EXECUTOR-NAME> hw1.mli hw1.ml hw1_reduction.mli hw1_reduction.ml t_reduction.ml *)
 (* > ./<EXECUTOR-NAME>                             *)
 
 type test_for_alpha_eq = {lmd1 : lambda; lmd2 : lambda; ans : bool};;
@@ -40,15 +40,17 @@ let tests_fv =
 let tests_nbr = 
     [{lmd_r = lambda_of_string "(\\x.x) a"; rdt = lambda_of_string "a"};
     {lmd_r = lambda_of_string "a ((\\y.\\z.y) (\\p.p))"; rdt = lambda_of_string "a \\z.\\p.p"};
-    {lmd_r = lambda_of_string "(\\x.x) (\\y.y) (\\z.z))"; rdt = lambda_of_string "((\\y.y) (\\z.z))"}];;
+    {lmd_r = lambda_of_string "(\\x.x) (\\y.y) (\\z.z))"; rdt = lambda_of_string "((\\y.y) (\\z.z))"};
+    {lmd_r = lambda_of_string "\\z.((\\x.x) y)"; rdt = lambda_of_string "\\z.y"}];;
 
 let tests_rnf = 
     [{lmd_r = lambda_of_string "(\\x.\\y.y)((\\z.z z)(\\z.z z))"; rdt = lambda_of_string "\\y.y"};
     {lmd_r = lambda_of_string "a ((\\y.\\z.y) (\\p.p))"; rdt = lambda_of_string "a \\z.\\p.p"};
     {lmd_r = lambda_of_string "(\\x.x) (\\y.y) (\\z.z))"; rdt = lambda_of_string "(\\z.z)"};
-    {lmd_r = lambda_of_string "(\\x.x x)(\\a.\\b.b b b) "; rdt = lambda_of_string "\\b.b b b"}];;
+    {lmd_r = lambda_of_string "(\\x.x x)(\\a.\\b.b b b)"; rdt = lambda_of_string "\\b.b b b"};
+    {lmd_r = lambda_of_string "(\\x.x x x)((\\x.x)(\\x.x))"; rdt = lambda_of_string "\\x.x"}];;
 
-(*let tester_on_alpha_eq t = if (is_alpha_equivalent (t.lmd1) (t.lmd2) = t.ans) then true else false;;*)
+let tester_on_alpha_eq t = if (is_alpha_equivalent (t.lmd1) (t.lmd2) = t.ans) then true else false;;
 let tester_on_free_subst t = if (free_to_subst (t.n) (t.m) (t.x) = t.ans) then true else false;;
 let tester_on_free_vars t = if (free_vars t.lmd = t.list_ans) then true else false;;
 let tester_on_normal_beta_reduction t = 
@@ -76,7 +78,7 @@ let rec tester pred name l ind cor incor =
                     tester pred name xs (ind + 1) cor (incor + 1));;
 
 
-(*tester (tester_on_alpha_eq) "is_alpha_equivalent" tests_fae 1 0 0;;*)
+tester (tester_on_alpha_eq) "is_alpha_equivalent" tests_fae 1 0 0;;
 tester (tester_on_free_subst) "free_subst" tests_ofs 1 0 0;;
 tester (tester_on_free_vars) "free_vars" tests_fv 1 0 0;;
 tester (tester_on_normal_beta_reduction) "normal_beta_reduction" tests_nbr 1 0 0;;

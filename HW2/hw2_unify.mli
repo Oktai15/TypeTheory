@@ -3,7 +3,7 @@ type algebraic_term = Var of string | Fun of string * (algebraic_term list)
 (* По списку уравнений вернуть одно уравнение *)
 val system_to_equation: (algebraic_term * algebraic_term) list -> (algebraic_term * algebraic_term)
 
-(* Применить подстановку к системе *)
+(* Применить подстановку к уравнению *)
 val apply_substitution: (string * algebraic_term) list -> algebraic_term -> algebraic_term
 
 (* Проверить решение *)
