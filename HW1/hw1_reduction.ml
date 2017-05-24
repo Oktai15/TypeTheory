@@ -109,12 +109,15 @@ and one_reduction_mem lmd hmap =
         | Var x -> lmd
         | Abs(a, b) -> Abs(a, reduce_with_mem b hmap)
         | App(a, b) -> 
-            match a with 
+            (match a with 
             | Abs(x, y) -> subst_lmd b y x (find_free_var b (VarSet.empty));
+                (*(match b with
+                | App(l, r) -> App(subst_lmd l y x (find_free_var l (VarSet.empty)), r)
+                | _ -> subst_lmd b y x (find_free_var b (VarSet.empty)))*)
             | _ ->  if is_normal_form a then
                         App(a, reduce_with_mem b hmap)
                     else
-                        App(reduce_with_mem a hmap, b);;
+                        App(reduce_with_mem a hmap, b));;
 
 let hm = HMapLmd.create(1000);; 
 let reduce_to_normal_form lmd = reduce_with_mem lmd hm;;
