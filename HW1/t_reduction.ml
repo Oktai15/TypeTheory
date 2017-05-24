@@ -48,7 +48,9 @@ let tests_rnf =
     {lmd_r = lambda_of_string "a ((\\y.\\z.y) (\\p.p))"; rdt = lambda_of_string "a \\z.\\p.p"};
     {lmd_r = lambda_of_string "(\\x.x) (\\y.y) (\\z.z))"; rdt = lambda_of_string "(\\z.z)"};
     {lmd_r = lambda_of_string "(\\x.x x)(\\a.\\b.b b b)"; rdt = lambda_of_string "\\b.b b b"};
-    {lmd_r = lambda_of_string "(\\x.x x x)((\\x.x)(\\x.x))"; rdt = lambda_of_string "\\x.x"}];;
+    {lmd_r = lambda_of_string "(\\x.x x x)((\\x.x)(\\x.x))"; rdt = lambda_of_string "\\x.x"};
+    {lmd_r = lambda_of_string "(\\x.\\y.x)(\\x.x)((\\x.x x)(\\x.x x))"; rdt = lambda_of_string "\\x.x"};
+    {lmd_r = lambda_of_string "(\\n.\\f.\\x.n (\\g.\\h.h (g f)) (\\u.x) (\\u.u)) (\\f.\\x.f (f (f x)))"; rdt = lambda_of_string "(\\f.(\\x.(f (f x))))"}];;
 
 let tester_on_alpha_eq t = if (is_alpha_equivalent (t.lmd1) (t.lmd2) = t.ans) then true else false;;
 let tester_on_free_subst t = if (free_to_subst (t.n) (t.m) (t.x) = t.ans) then true else false;;

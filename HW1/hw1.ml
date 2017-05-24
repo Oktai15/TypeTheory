@@ -115,12 +115,12 @@ let parse_lambda_of_tokens str_tokens =
 	match (tn()) with
         | Kwd "("  -> 
                 let pl = parse_lambda() in
-            	cb();
+            	cb(); 
                 maybe_app pl;
 
         | Kwd "\\" ->
                 let pa = parse_abs() in
-     		maybe_app pa;
+     		(let abs = maybe_app pa in abs)
 
         | Ident s  ->
                 let v = Var s in
@@ -141,9 +141,12 @@ let parse_lambda_of_tokens str_tokens =
         | None   -> failwith "Unexpected error";
         | Some k -> 
                 (match k with 
-                 | Kwd ")" -> l_app
-      		     | Kwd ";" -> l_app
-        	     | _ -> App(l_app, parse_lambda())) in
+                 | Kwd ")"  -> l_app
+      		     | Kwd ";"  -> l_app
+                 | Kwd "\\" -> App(l_app, parse_lambda())
+        	     | Kwd "("  -> let _ = tn() and newp = parse_lambda() in (cb(); maybe_app (App(l_app, newp)))
+                 | Ident s  -> let _ = tn() in maybe_app (App(l_app, Var(s))) 
+                 | _ -> failwith "Unexpected symbol") in 
 
     parse_lambda();; 
  

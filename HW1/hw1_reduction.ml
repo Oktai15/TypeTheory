@@ -100,7 +100,8 @@ let rec reduce_with_mem lmd hmap =
                 else 
                 let a = one_reduction_mem lmd hmap in
                     if is_normal_form a then
-                        (HMapLmd.add hmap lmd a; a)
+                        if (HMapLmd.length hmap >= 1000) then (HMapLmd.reset hmap; HMapLmd.add hmap lmd a; a)
+                        else (HMapLmd.add hmap lmd a; a) 
                     else reduce_with_mem a hmap
     | true  -> lmd
 and one_reduction_mem lmd hmap =  
@@ -111,9 +112,6 @@ and one_reduction_mem lmd hmap =
         | App(a, b) -> 
             (match a with 
             | Abs(x, y) -> subst_lmd b y x (find_free_var b (VarSet.empty));
-                (*(match b with
-                | App(l, r) -> App(subst_lmd l y x (find_free_var l (VarSet.empty)), r)
-                | _ -> subst_lmd b y x (find_free_var b (VarSet.empty)))*)
             | _ ->  if is_normal_form a then
                         App(a, reduce_with_mem b hmap)
                     else

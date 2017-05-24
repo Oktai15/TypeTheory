@@ -51,3 +51,4 @@ print_string (string_of_lambda (lambda_of_string "(((((((\\y.y)))))))")); print_
 print_string (string_of_lambda (lambda_of_string "((z))(\\x.\\y.((xy)))")); print_string "\n";;
 print_string (string_of_lambda (lambda_of_string "\\x.\\y.xf yf")); print_string "\n";;
 print_string (string_of_lambda (lambda_of_string "x1")); print_string "\n";; 
+print_string (string_of_lambda (lambda_of_string "(\\x.x) (\\x.x) x")); print_string "\n";; 
