@@ -11,6 +11,33 @@ let gen10000 = generator_numbers 10000;;
 let next_name_fun() = match (Stream.next gen10000) with
     | k -> "name" ^ string_of_int k;;
 
+exception NoSolution of string;;
+module StringSet = Set.Make (String);;
+
+let rec eq_at at1 at2 =
+    match (at1, at2) with
+        (Var a, Var b) -> a = b
+        | (Fun(f, l1), Fun(g, l2)) -> f = g && eq_list l1 l2 
+        | _ -> false
+
+and eq_list l1 l2 =
+    match (l1, l2) with
+        ([], []) -> true
+        | (h1::t1), (h2::t2) -> (eq_at h1 h2) && (eq_list t1 t2) 
+        | _ -> false;;
+
+let rec contains str at msk = 
+    match at with
+        (Var a) -> if a = str then msk lor 1 else msk 
+        | (Fun (f, l)) -> (contains_l str l msk) lor (if str = f then 2 else 0)
+and contains_l str l msk =
+    match l with
+        [] -> msk
+        | (h::t) -> (contains str h msk) lor (contains_l str t msk);;         
+
+let memv str at =
+    contains str at 0 land 1 <> 0;;
+
 let rec algebraic_term_to_string (at : algebraic_term) = 
     let rec impl a =
         match a with 
@@ -40,11 +67,10 @@ let rec is_contains (x : string) (t : algebraic_term) : bool =
 let rec subst (s : algebraic_term) (x : string) (t : algebraic_term) : algebraic_term =
 	match t with 
 	| Var y -> if (x = y) then s else t
-	| Fun(f, l) -> Fun(f, List.map (subst s x) l);;
-    
+	| Fun(f, l) -> Fun(f, List.map (subst s x) l);;   
 
 (* Major implementations: system_to_equation, apply_substitution,    *)
-(* check_solution, solve_system.                                 *)
+(* check_solution, solve_system.                                     *)
 
 let system_to_equation (stm : system_of_equations) : equation =
     let new_name = next_name_fun() in
@@ -54,31 +80,55 @@ let system_to_equation (stm : system_of_equations) : equation =
 let apply_substitution (s : substitution) (at : algebraic_term) : algebraic_term =
     List.fold_right (fun si u -> subst (snd si) (fst si) u) s at;;
 
+let apply_substitution_sys subst sys =
+    let rec impl subst sys acc =
+        match sys with
+            [] -> List.rev acc
+            | ((l, r)::t) -> impl subst t (((apply_substitution subst l), (apply_substitution subst r))::acc) in
+    impl subst sys [];; 
+
 let check_solution (s : substitution) (stm : system_of_equations) : bool = 
 	let eq = system_to_equation stm in
 	    is_equal_algebraic_term (apply_substitution s (fst eq)) (apply_substitution s (snd eq));;
 
-let rec solve_system (sym : system_of_equations) : substitution option =
-    let unify_eq (s : algebraic_term) (t : algebraic_term) : substitution = 
-        match (s, t) with 
-        | (Var x, Var y) -> if (x = y) then [] else [(x, t)]
-        | (Fun (f, l1), Fun(g, l2)) -> 
-            if (f = g) && List.length l1 = List.length l2
-            then let sm = solve_system (List.combine l1 l2) in
-                match sm with
-                | Some vr -> vr 
-                | None -> failwith "It won't be!" 
-            else failwith "Not the same length!" 
-        | ((Var x, (Fun(_, _) as term))  | ((Fun(_, _) as term), Var x)) ->
-            if is_contains x term then failwith "The same variable!" else [(x, term)]
-    in
+let rec solve_system (sys : system_of_equations) : substitution option =
+    let get_args_sys l1 l2 =
+        let rec impl l1 l2 ans =
+            match (l1, l2) with 
+                ([], []) -> List.rev ans 
+                | (h1::t1, h2::t2) -> impl t1 t2 ((h1, h2)::ans) 
+                | _ -> failwith "never" in
+        impl l1 l2 [] in
+        
+    let rec impl sys resolved =
+        if StringSet.cardinal resolved = List.length sys then sys else   
+        match sys with
+            [] -> raise (NoSolution "Empty system")
+            | (lhs, rhs)::tail ->
+                let cur = lhs, rhs in
+                if eq_at lhs rhs then impl tail resolved else 
+                match (lhs, rhs) with 
+                    Var a, any -> if memv a any then raise (NoSolution "Fourth rule abused") 
+                            else let resolved = StringSet.add a resolved in
+                            impl (List.append (apply_substitution_sys [a, any] tail) [cur]) resolved 
+                    | any, Var a -> impl (List.append tail [rhs, lhs]) resolved 
+                    | Fun(f, l1), Fun(g, l2) -> if f <> g || List.length l1 <> List.length l2 then raise (NoSolution "Third rule abused")
+                                    else impl (List.append tail (get_args_sys l1 l2)) resolved in
+
+    let dewrap sys =
+        let rec impl sys ans =
+            match sys with 
+                [] -> List.rev ans
+                | ((Var a, rhs)::tail) -> 
+                    impl tail ((a, rhs)::ans) 
+                | _ -> failwith "it's impossible, sorry" in
+        impl sys [] in
+
     try 
-        match sym with 
-        | [] -> Some ([])
-        | (x, y) :: t -> 
-            let term2 = solve_system t in
-            match term2 with
-            | Some k -> Some((unify_eq (apply_substitution k x) (apply_substitution k y)) @ k)   
-            | None -> None
-    with 
-    | _ -> None
+        let resolved_system = impl sys StringSet.empty in
+        print_string "";
+        (Some (dewrap resolved_system))
+
+    with (NoSolution msg) -> 
+        print_string "";
+        None;;
