@@ -14,18 +14,6 @@ let next_name_fun() = match (Stream.next gen10000) with
 exception NoSolution of string;;
 module StringSet = Set.Make (String);;
 
-let rec eq_at at1 at2 =
-    match (at1, at2) with
-        (Var a, Var b) -> a = b
-        | (Fun(f, l1), Fun(g, l2)) -> f = g && eq_list l1 l2 
-        | _ -> false
-
-and eq_list l1 l2 =
-    match (l1, l2) with
-        ([], []) -> true
-        | (h1::t1), (h2::t2) -> (eq_at h1 h2) && (eq_list t1 t2) 
-        | _ -> false;;
-
 let rec contains str at msk = 
     match at with
         (Var a) -> if a = str then msk lor 1 else msk 
@@ -34,9 +22,6 @@ and contains_l str l msk =
     match l with
         [] -> msk
         | (h::t) -> (contains str h msk) lor (contains_l str t msk);;         
-
-let memv str at =
-    contains str at 0 land 1 <> 0;;
 
 let rec algebraic_term_to_string (at : algebraic_term) = 
     let rec impl a =
@@ -58,6 +43,9 @@ let rec is_equal_algebraic_term (fat : algebraic_term) (sat : algebraic_term) : 
     | (Fun(f1, l1), Fun(f2, l2)) -> if f1 = f2 then 
         List.for_all (fun e -> is_equal_algebraic_term (fst e) (snd e)) (List.combine l1 l2) else false;
     | _ -> false;;
+
+let memv str at =
+    contains str at 0 land 1 <> 0;;
 
 let rec is_contains (x : string) (t : algebraic_term) : bool =
 	match t with
@@ -106,7 +94,7 @@ let rec solve_system (sys : system_of_equations) : substitution option =
             [] -> raise (NoSolution "Empty system")
             | (lhs, rhs)::tail ->
                 let cur = lhs, rhs in
-                if eq_at lhs rhs then impl tail resolved else 
+                if is_equal_algebraic_term lhs rhs then impl tail resolved else 
                 match (lhs, rhs) with 
                     Var a, any -> if memv a any then raise (NoSolution "Fourth rule abused") 
                             else let resolved = StringSet.add a resolved in
